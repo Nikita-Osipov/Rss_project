@@ -67,14 +67,16 @@ def rsc(url,kWrds):
     divs = soup.findAll('item')
     for div in divs:
         ttl = div.find('title')
+        txt = div.find('description')
         dflt_ttl = title_words(ttl.text)
-        if wordInStr(keyW,dflt_ttl) == True:
-            txt = div.find('description')
+        dflt_dsc = title_words(txt.text)
+        if wordInStr(keyW,dflt_ttl) == True or wordInStr(keyW,dflt_dsc) == True:
             lnk = div.find('guid')
             news.append(ttl.text+'\n\n'+txt.text+'\n\n'+lnk.text+'\n\n')
     return news
 
 token = "Тут должен быть token вашего сообщества в vk."#Warning
+
 vk_session = vk_api.VkApi(token=token)
 
 longpoll = VkLongPoll(vk_session)
@@ -253,27 +255,35 @@ while True:
                             keyboard = keyboard,
                             random_id = random.randint(0, 10000000))                    
             elif modeOut == 3:
-                modeOut = 0
-                try:
-                    outR = rsc(newRss,event.text.lower())
-                    for i in outR:
+                if event.text.lower() != 'вернуться к категориям':                
+                    modeOut = 0
+                    try:
+                        outR = rsc(newRss,event.text.lower())
+                        for i in outR:
+                            session_api.messages.send(
+                                    user_id = event.user_id,
+                                    message = i,
+                                    keyboard = keyboard,
+                                    random_id = random.randint(0, 10000000))
+                        if len(outR) == 0:
+                            numberNews = 'За последнее время не было новостей с данной тематикой или представленная ссылка не выводит файл формата RSS или xml.'
+                        else:
+                            numberNews = 'Статьи найдены!'                    
                         session_api.messages.send(
                                 user_id = event.user_id,
-                                message = i,
+                                message = numberNews,
                                 keyboard = keyboard,
                                 random_id = random.randint(0, 10000000))
-                    if len(outR) == 0:
-                        numberNews = 'За последнее время не было новостей с данной тематикой или представленная ссылка не выводит файл формата RSS или xml.'
-                    else:
-                        numberNews = 'Статьи найдены!'                    
+                    except Exception:
+                        session_api.messages.send(
+                                user_id = event.user_id,
+                                message = "Упс! Или Rss лента неверна, или teg'и отсутствуют.\nПопробуйте снова! ",
+                                keyboard = keyboard,
+                                random_id = random.randint(0, 10000000))                    
+                else:
+                    modeOut = 0
                     session_api.messages.send(
                             user_id = event.user_id,
-                            message = numberNews,
+                            message = 'Выберите направленность новостного сайта!',
                             keyboard = keyboard,
-                            random_id = random.randint(0, 10000000))
-                except Exception:
-                    session_api.messages.send(
-                            user_id = event.user_id,
-                            message = "Упс! Или Rss лента неверна, или teg'и отсутствуют.\nПопробуйте снова! ",
-                            keyboard = keyboard,
-                            random_id = random.randint(0, 10000000))                    
+                            random_id = random.randint(0, 10000000)) 
